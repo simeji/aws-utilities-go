@@ -1,0 +1,43 @@
+{
+	"ImportPath": "github.com/simeji/aws-utilities-go",
+	"GoVersion": "go1.4",
+	"Deps": [
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/aws",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/endpoints",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/ec2query",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query/queryutil",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/xml/xmlutil",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/signer/v4",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/service/ec2",
+			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-95-g9b2bd2b",
+			"Rev": "9b2bd2b3489748d4d0a204fa4eb2ee9e89e0ebc6"
+		},
+		{
+			"ImportPath": "github.com/vaughan0/go-ini",
+			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
+		}
+	]
+}
