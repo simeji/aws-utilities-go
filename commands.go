@@ -25,10 +25,8 @@ var commandList_ipaddress = cli.Command{
   Description: `
 `,
   Flags: []cli.Flag {
-    cli.StringFlag{
-      Name: "nametag, n",
-      Usage: "NameTag",
-    },
+    &cli.StringFlag{ Name: "nametag, n", Usage: "NameTag", },
+    &cli.BoolFlag{ Name: "all, a", Usage: "Get all status instances", },
   },
   Action: doList_ipaddress,
 }
@@ -80,11 +78,24 @@ func doList_ipaddress(c *cli.Context) {
   }
   prov, _ := aws.ProfileCreds("", profile, 5 * time.Minute)
   svc := ec2.New(&aws.Config{Credentials: prov, Region: "ap-northeast-1"})
-  params := ec2.DescribeInstancesInput{
-    Filters: []ec2.Filter{
-      Name: "tag:Name",
-      Values: "*" + name + "*",
+  params := &ec2.DescribeInstancesInput{
+    Filters: []*ec2.Filter{
+      &ec2.Filter{
+        Name: aws.String("tag:Name"),
+        Values: []*string{
+          aws.String(name),
+        },
+      },
     },
+  }
+  if c.Bool("all") == false {
+    sf := &ec2.Filter{
+      Name: aws.String("instance-state-name"),
+      Values: []*string{
+        aws.String("running"),
+      },
+    }
+    params.Filters = append(params.Filters, sf)
   }
   res, err := svc.DescribeInstances(params)
 
@@ -105,7 +116,7 @@ func doList_ipaddress(c *cli.Context) {
           break
         }
       }
-      fmt.Println(nt, *i.PrivateIPAddress)
+      fmt.Println(nt, *i.PrivateIPAddress, *i.State.Name)
     }
   }
   //fmt.Println(awsutil.StringValue(res))
