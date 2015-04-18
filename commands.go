@@ -1,12 +1,16 @@
 package main
 
 import (
+	//"bufio"
+	"bytes"
+	"code.google.com/p/go.crypto/ssh"
 	"fmt"
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/aws/awsutil"
 	"github.com/awslabs/aws-sdk-go/service/ec2"
 	"github.com/awslabs/aws-sdk-go/service/iam"
 	"github.com/codegangsta/cli"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -14,7 +18,7 @@ import (
 
 var Commands = []cli.Command{
 	commandList_ipaddress,
-	commandEnter_instance,
+	commandExec_instance,
 	commandList_users,
 }
 
@@ -23,25 +27,30 @@ var commandList_ipaddress = cli.Command{
 	Aliases: []string{"l"},
 	Usage:   "list ipaddress filtered by NameTag",
 	Description: `
+	aws-utilities -p {your_profile} l -n {NameTag} [-a]
 `,
 	Flags: []cli.Flag{
-		&cli.StringFlag{Name: "nametag, n", Usage: "NameTag"},
+		&cli.StringFlag{Name: "nametag, n", Usage: "[*required] NameTag"},
 		&cli.BoolFlag{Name: "all, a", Usage: "Get all status instances"},
 	},
 	Action: doList_ipaddress,
 }
 
-var commandEnter_instance = cli.Command{
-	Name:    "enter-instance",
+var commandExec_instance = cli.Command{
+	Name:    "exec-instance",
 	Aliases: []string{"e"},
-	Usage:   "enter the instance filtered by NameTag",
+	Usage:   "enter the instance and execute command",
 	Description: `
-	aaaa hogehoge mogemoge
 `,
 	Flags: []cli.Flag{
-		&cli.StringFlag{Name: "nametag, n", Usage: "NameTag"},
+		&cli.StringFlag{Name: "nametag, n", Usage: "[*required] NameTag"},
+		&cli.StringFlag{Name: "command, c", Usage: "[*required] Execution commands at remote host"},
+		&cli.BoolFlag{Name: "public, pub", Usage: "Then true, remote server is accessed by PublicIPAddress"},
+		&cli.StringFlag{Name: "user, u", Usage: "UserName used for login to remote host"},
+		&cli.StringFlag{Name: "id, i", Usage: "PrivateKeyFile used for login to remote host"},
+		&cli.StringFlag{Name: "port, p", Usage: "server port used for login to remote host"},
 	},
-	Action: doEnter_instance,
+	Action: doExec_instance,
 }
 
 var commandList_users = cli.Command{
@@ -52,18 +61,6 @@ var commandList_users = cli.Command{
 	List IAM Users
 `,
 	Action: doList_users,
-}
-
-func debug(v ...interface{}) {
-	if os.Getenv("DEBUG") != "" {
-		log.Println(v...)
-	}
-}
-
-func assert(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func doList_ipaddress(c *cli.Context) {
@@ -117,7 +114,7 @@ func doList_ipaddress(c *cli.Context) {
 					break
 				}
 			}
-			fmt.Println(nt, *i.PrivateIPAddress, *i.State.Name)
+			fmt.Println(nt, *i.PrivateIPAddress, *i.PublicIPAddress, *i.State.Name)
 		}
 	}
 }
@@ -146,7 +143,7 @@ func doList_users(c *cli.Context) {
 	fmt.Println(awsutil.StringValue(resp.Users))
 }
 
-func doEnter_instance(c *cli.Context) {
+func doExec_instance(c *cli.Context) {
 	profile := c.GlobalString("profile")
 	if profile == "" {
 		fmt.Println("'--profile' is required")
@@ -155,6 +152,11 @@ func doEnter_instance(c *cli.Context) {
 	name := c.String("nametag")
 	if name == "" {
 		fmt.Println("'--nametag' is required")
+		os.Exit(1)
+	}
+	command := c.String("command")
+	if command == "" {
+		fmt.Println("'--command' is required")
 		os.Exit(1)
 	}
 	prov, _ := aws.ProfileCreds("", profile, 5*time.Minute)
@@ -167,6 +169,12 @@ func doEnter_instance(c *cli.Context) {
 					aws.String(name),
 				},
 			},
+			&ec2.Filter{
+				Name: aws.String("instance-state-name"),
+				Values: []*string{
+					aws.String("running"),
+				},
+			},
 		},
 	}
 	res, err := svc.DescribeInstances(params)
@@ -177,16 +185,68 @@ func doEnter_instance(c *cli.Context) {
 		panic(err)
 	}
 
-	for _, r := range res.Reservations {
-		for _, i := range r.Instances {
-			var nt string
-			for _, t := range i.Tags {
-				if *t.Key == "Name" {
-					nt = *t.Value
-					break
-				}
-			}
-			fmt.Println(nt, *i.PrivateIPAddress, *i.State.Name)
+	var ip string
+	r := res.Reservations[0]
+	for _, i := range r.Instances {
+		ip = *i.PrivateIPAddress
+		if c.Bool("public") {
+			ip = *i.PublicIPAddress
 		}
+		break
 	}
+
+	port := "22"
+	_p := c.String("port")
+	if _p != "" {
+		port = _p
+	}
+
+	idfile := os.Getenv("HOME") + "/.ssh/id_rsa"
+	if c.String("id") != "" {
+		idfile = c.String("id")
+	}
+	username := os.Getenv("USER")
+	if c.String("user") != "" {
+		username = c.String("user")
+	}
+	contents, err := ioutil.ReadFile(idfile)
+	if err != nil {
+		fmt.Println(contents, err)
+		os.Exit(2)
+	}
+	signer, err := ssh.ParsePrivateKey(contents)
+	config := &ssh.ClientConfig{
+		User: username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+	}
+
+	client, err := ssh.Dial("tcp", ip+":"+port, config)
+	if err != nil {
+		panic("Failed to dial: " + err.Error())
+	}
+
+	session, err := client.NewSession()
+	if err != nil {
+		panic("Failed to create session: " + err.Error())
+	}
+	defer session.Close()
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+	// Request pseudo terminal
+	if err := session.RequestPty("xterm", 80, 40, modes); err != nil {
+		log.Fatalf("request for pseudo terminal failed: %s", err)
+	}
+
+	var b bytes.Buffer
+	session.Stdout = &b
+	if err := session.Run(command); err != nil {
+		panic("Failed to run: " + err.Error())
+	}
+	fmt.Println(b.String())
 }

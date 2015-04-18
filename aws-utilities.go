@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"github.com/codegangsta/cli"
+	"os"
 )
 
 func main() {
@@ -13,10 +13,10 @@ func main() {
 	app.Author = "simeji"
 	app.Email = "simeji.net@gmail.com"
 	app.Commands = Commands
-	app.Flags = []cli.Flag {
+	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name: "profile, p",
-			Usage: "aws profile",
+			Name:  "profile, p",
+			Usage: "[*required] aws profile",
 		},
 	}
 	app.Run(os.Args)

@@ -1,34 +1,43 @@
 {
-	"ImportPath": "github.com/simeji/aws-utilities-go",
+	"ImportPath": "github.com/simeji/aws-utilities",
 	"GoVersion": "go1.4",
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/go.crypto/ssh",
+			"Comment": "null-236",
+			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+		},
+		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/aws",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/endpoints",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/ec2query",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query/queryutil",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/xml/xmlutil",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/signer/v4",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/awslabs/aws-sdk-go/service/ec2",
-			"Rev": "8753e85c61243cf9c31ac5cafa6596dfc77d2a24"
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/service/iam",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
