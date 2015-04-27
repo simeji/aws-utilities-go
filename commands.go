@@ -63,17 +63,21 @@ var commandList_users = cli.Command{
 	Action: doList_users,
 }
 
+func getValidateParams(c *cli.Context) (name string, err error) {
+	err = nil
+	if c.String("nametag") == "" {
+		err = fmt.Errorf("'--nametag' is required")
+	}
+	return
+}
+
 func doList_ipaddress(c *cli.Context) {
+	name, err := getValidateParams(c)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	profile := c.GlobalString("profile")
-	if profile == "" {
-		fmt.Println("'--profile' is required")
-		os.Exit(1)
-	}
-	name := c.String("nametag")
-	if name == "" {
-		fmt.Println("'--nametag' is required")
-		os.Exit(1)
-	}
 	prov, _ := aws.ProfileCreds("", profile, 5*time.Minute)
 	svc := ec2.New(&aws.Config{Credentials: prov, Region: "ap-northeast-1"})
 	params := &ec2.DescribeInstancesInput{
@@ -100,9 +104,11 @@ func doList_ipaddress(c *cli.Context) {
 	if awserr := aws.Error(err); awserr != nil {
 		// A service error occurred.
 		fmt.Println("Error:", awserr.Code, awserr.Message)
+		os.Exit(1)
 	} else if err != nil {
 		// A non-service error occurred.
 		panic(err)
+		os.Exit(1)
 	}
 
 	for _, r := range res.Reservations {
@@ -114,7 +120,19 @@ func doList_ipaddress(c *cli.Context) {
 					break
 				}
 			}
-			fmt.Println(nt, *i.PrivateIPAddress, *i.PublicIPAddress, *i.State.Name)
+			var privateip, publicip string
+			if i.PrivateIPAddress != nil {
+				privateip = *i.PrivateIPAddress
+			}
+			if i.PublicIPAddress != nil {
+				publicip = *i.PublicIPAddress
+			}
+			fmt.Println(
+				nt,
+				privateip,
+				publicip,
+				*i.State.Name,
+			)
 		}
 	}
 }
