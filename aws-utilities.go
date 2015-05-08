@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/codegangsta/cli"
 	"os"
 )
@@ -17,17 +16,8 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "profile, p",
-			Usage: "[*required] aws profile",
+			Usage: "aws profile [default: 'default']",
 		},
-	}
-	app.Before = func(c *cli.Context) (err error) {
-		err = nil
-		if c.GlobalString("profile") == "" {
-			err = fmt.Errorf("'--profile' is required")
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		return
 	}
 	app.Run(os.Args)
 }

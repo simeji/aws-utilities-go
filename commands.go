@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/aws/awsutil"
+	"github.com/awslabs/aws-sdk-go/aws/credentials"
 	"github.com/awslabs/aws-sdk-go/service/ec2"
 	"github.com/awslabs/aws-sdk-go/service/iam"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 )
 
 var Commands = []cli.Command{
@@ -30,7 +30,7 @@ var commandList_ipaddress = cli.Command{
 	aws-utilities -p {your_profile} l -n {NameTag} [-a]
 `,
 	Flags: []cli.Flag{
-		&cli.StringFlag{Name: "nametag, n", Usage: "[*required] NameTag"},
+		&cli.StringFlag{Name: "nametag, n", Usage: "NameTag [default: *]"},
 		&cli.BoolFlag{Name: "all, a", Usage: "Get all status instances"},
 	},
 	Action: doList_ipaddress,
@@ -63,23 +63,42 @@ var commandList_users = cli.Command{
 	Action: doList_users,
 }
 
-func getValidateParams(c *cli.Context) (name string, err error) {
+func getProfile(c *cli.Context) (profile string) {
+	profile = c.GlobalString("profile")
+	if profile == "" {
+		profile = "default"
+	}
+	return
+}
+
+func getCredential(profile string) *credentials.Credentials {
+	return credentials.NewSharedCredentials("", profile)
+}
+
+func getNametag(c *cli.Context) (name string, err error) {
 	err = nil
-	if c.String("nametag") == "" {
+	name = c.String("nametag")
+	if name == "" {
 		err = fmt.Errorf("'--nametag' is required")
 	}
 	return
 }
 
+func getConfig(cred *credentials.Credentials) *aws.Config {
+	return &aws.Config{Credentials: cred, Region: "ap-northeast-1"}
+}
+
 func doList_ipaddress(c *cli.Context) {
-	name, err := getValidateParams(c)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	name, err := getNametag(c)
+
+	if name == "" {
+		name = "*"
 	}
-	profile := c.GlobalString("profile")
-	prov, _ := aws.ProfileCreds("", profile, 5*time.Minute)
-	svc := ec2.New(&aws.Config{Credentials: prov, Region: "ap-northeast-1"})
+
+	profile := getProfile(c)
+	cred := getCredential(profile)
+	svc := ec2.New(getConfig(cred))
+
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			&ec2.Filter{
@@ -90,6 +109,7 @@ func doList_ipaddress(c *cli.Context) {
 			},
 		},
 	}
+
 	if c.Bool("all") == false {
 		sf := &ec2.Filter{
 			Name: aws.String("instance-state-name"),
@@ -99,6 +119,7 @@ func doList_ipaddress(c *cli.Context) {
 		}
 		params.Filters = append(params.Filters, sf)
 	}
+
 	res, err := svc.DescribeInstances(params)
 
 	if awserr := aws.Error(err); awserr != nil {
@@ -131,6 +152,7 @@ func doList_ipaddress(c *cli.Context) {
 				nt,
 				privateip,
 				publicip,
+				*i.InstanceID,
 				*i.State.Name,
 			)
 		}
@@ -138,22 +160,16 @@ func doList_ipaddress(c *cli.Context) {
 }
 
 func doList_users(c *cli.Context) {
-	profile := c.GlobalString("profile")
-	if profile == "" {
-		fmt.Println("'--profile' is required")
-		os.Exit(1)
-	}
-	prov, _ := aws.ProfileCreds("", profile, 5*time.Minute)
-	svc := iam.New(&aws.Config{Credentials: prov})
-	params := &iam.ListUsersInput{
-	//Marker:		 aws.String("markerType"),
-	//MaxItems:	 aws.Long(1),
-	//PathPrefix: aws.String("/"),
-	}
+	profile := getProfile(c)
+	cred := getCredential(profile)
+	svc := iam.New(getConfig(cred))
+	params := &iam.ListUsersInput{}
 	resp, err := svc.ListUsers(params)
+
 	if awserr := aws.Error(err); awserr != nil {
 		// A service error occurred.
 		fmt.Println("Error:", awserr.Code, awserr.Message)
+		os.Exit(1)
 	} else if err != nil {
 		// A non-service error occurred.
 		panic(err)
@@ -162,14 +178,9 @@ func doList_users(c *cli.Context) {
 }
 
 func doExec_instance(c *cli.Context) {
-	profile := c.GlobalString("profile")
-	if profile == "" {
-		fmt.Println("'--profile' is required")
-		os.Exit(1)
-	}
-	name := c.String("nametag")
-	if name == "" {
-		fmt.Println("'--nametag' is required")
+	name, err := getNametag(c)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	command := c.String("command")
@@ -177,8 +188,9 @@ func doExec_instance(c *cli.Context) {
 		fmt.Println("'--command' is required")
 		os.Exit(1)
 	}
-	prov, _ := aws.ProfileCreds("", profile, 5*time.Minute)
-	svc := ec2.New(&aws.Config{Credentials: prov, Region: "ap-northeast-1"})
+	profile := getProfile(c)
+	cred := getCredential(profile)
+	svc := ec2.New(getConfig(cred))
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			&ec2.Filter{
@@ -213,16 +225,18 @@ func doExec_instance(c *cli.Context) {
 		break
 	}
 
+	// default port
 	port := "22"
 	_p := c.String("port")
 	if _p != "" {
 		port = _p
 	}
-
+	// default pem
 	idfile := os.Getenv("HOME") + "/.ssh/id_rsa"
 	if c.String("id") != "" {
 		idfile = c.String("id")
 	}
+	// defult user
 	username := os.Getenv("USER")
 	if c.String("user") != "" {
 		username = c.String("user")
