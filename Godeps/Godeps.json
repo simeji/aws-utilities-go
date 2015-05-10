@@ -1,0 +1,52 @@
+{
+	"ImportPath": "github.com/simeji/aws-utilities",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.crypto/ssh",
+			"Comment": "null-236",
+			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/aws",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/endpoints",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/ec2query",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/xml/xmlutil",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/signer/v4",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/service/ec2",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/awslabs/aws-sdk-go/service/iam",
+			"Rev": "9f2cef45db969a146efb8b6808de438d8d4268b8"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-95-g9b2bd2b",
+			"Rev": "9b2bd2b3489748d4d0a204fa4eb2ee9e89e0ebc6"
+		},
+		{
+			"ImportPath": "github.com/vaughan0/go-ini",
+			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
+		}
+	]
+}
